@@ -350,6 +350,8 @@
     "file_explorer_saved_file_error": "Impossible de sauvegarder le fichier",
     "reserved_field_names_error": "Svp n'utilisez pas les noms réservés suivants :",
     "use_current_date": "Utiliser la date du jour",
+    "show_timezone": "Afficher le fuseau horaire",
+    "when_differs": "Quand diffère",
     "restrict_selection_to": "Restreindre la sélection à",
     "maximum_tabs": "Nombre maximun d'onglets",
     "algorithm": "Algorithme",

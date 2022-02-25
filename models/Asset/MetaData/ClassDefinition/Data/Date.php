@@ -15,6 +15,8 @@
 
 namespace Pimcore\Model\Asset\MetaData\ClassDefinition\Data;
 
+use Pimcore\Tool\DateTimeFormat;
+
 class Date extends Data
 {
     /**
@@ -32,6 +34,26 @@ class Date extends Data
         return $value;
     }
 
+    public function getDataForEditMode($data, $params = [])
+    {
+        return $this->getDateFormatter()->format($data);
+    }
+
+    public function getDataFromEditMode($data, $params = [])
+    {
+        return $this->getDateFormatter()->parseString($data)->getTimestamp();
+    }
+
+    public function getDataForListfolderGrid($data, $params = [])
+    {
+        return $this->getDataForEditMode($data, $params);
+    }
+
+    public function getDataFromListfolderGrid($data, $params = [])
+    {
+        return $this->getDataFromEditMode($data, $params);
+    }
+
     /**
      * @param mixed $value
      * @param array $params
@@ -40,6 +62,12 @@ class Date extends Data
      */
     public function getVersionPreview($value, $params = [])
     {
-        return (string)date('m/d/Y', $value);
+        return $this->getDateFormatter()->format($value) ?? '';
+    }
+
+
+    protected function getDateFormatter(): DateTimeFormat\AbstractDateTimeFormat
+    {
+        return new DateTimeFormat\DateOnly();
     }
 }

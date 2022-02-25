@@ -271,6 +271,7 @@ class IndexController extends AdminController implements KernelResponseEventInte
 
         $this
             ->addSystemVarSettings($settings)
+            ->addTimezoneInfoSettings($settings)
             ->addMaintenanceSettings($settings, $maintenanceExecutor)
             ->addMailSettings($settings, $config)
             ->addCustomViewSettings($settings);
@@ -321,6 +322,19 @@ class IndexController extends AdminController implements KernelResponseEventInte
 
         $settings['session_gc_maxlifetime'] = (int)$session_gc_maxlifetime;
 
+        return $this;
+    }
+
+    protected function addTimezoneInfoSettings(array &$settings): self
+    {
+        $now = new \Carbon\Carbon();
+
+        $settings['timezone_info'] = [
+            'name' => $now->getTimezone()->getName(),
+            'current_timestamp' => $now->getTimestamp(),
+            'current_offset_seconds' => $now->getOffset(),
+            'uses_dst' => $now->isDST() || $now->addMonths(6)->isDST(),
+        ];
         return $this;
     }
 

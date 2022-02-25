@@ -20,9 +20,14 @@ use Pimcore\Db;
 use Pimcore\Model;
 use Pimcore\Model\DataObject\ClassDefinition\Data;
 use Pimcore\Normalizer\NormalizerInterface;
+use Pimcore\Tool\DateTimeFormat;
 
 class Datetime extends Data implements ResourcePersistenceAwareInterface, QueryResourcePersistenceAwareInterface, TypeDeclarationSupportInterface, EqualComparisonInterface, VarExporterInterface, NormalizerInterface
 {
+    public const SHOW_TIMEZONE_NEVER = 'never';
+    public const SHOW_TIMEZONE_WHEN_DIFFERS = 'when_differs';
+    public const SHOW_TIMEZONE_ALWAYS = 'always';
+
     use Extension\ColumnType;
     use Extension\QueryColumnType;
     use Model\DataObject\Traits\DefaultValueTrait;
@@ -69,6 +74,11 @@ class Datetime extends Data implements ResourcePersistenceAwareInterface, QueryR
     public $useCurrentDate;
 
     /**
+     * @var string
+     */
+    public $showTimezone = self::SHOW_TIMEZONE_NEVER;
+
+    /**
      * @see ResourcePersistenceAwareInterface::getDataForResource
      *
      * @param \DateTime $data
@@ -81,13 +91,12 @@ class Datetime extends Data implements ResourcePersistenceAwareInterface, QueryR
     {
         $data = $this->handleDefaultValue($data, $object, $params);
 
-        if ($data) {
-            $result = $data->getTimestamp();
+        if ($data instanceof \DateTimeInterface) {
             if ($this->getColumnType() == 'datetime') {
-                $result = date('Y-m-d H:i:s', $result);
+                return $this->getResourceDateFormatter()->format($data);
             }
 
-            return $result;
+            return $data->getTimestamp();
         }
 
         return null;
@@ -106,15 +115,10 @@ class Datetime extends Data implements ResourcePersistenceAwareInterface, QueryR
     {
         if ($data) {
             if ($this->getColumnType() == 'datetime') {
-                $data = strtotime($data);
-                if ($data === false) {
-                    return null;
-                }
+                return $this->getResourceDateFormatter()->parseString($data);
             }
 
-            $result = $this->getDateFromTimestamp($data);
-
-            return $result;
+            return $this->getResourceDateFormatter()->parseTimestamp($data);
         }
 
         return null;
@@ -146,23 +150,10 @@ class Datetime extends Data implements ResourcePersistenceAwareInterface, QueryR
     public function getDataForEditmode($data, $object = null, $params = [])
     {
         if ($data) {
-            return $data->getTimestamp();
+            return $this->getEditDateFormatter()->format($data);
         }
 
         return null;
-    }
-
-    /**
-     * @param int $timestamp
-     *
-     * @return \Carbon\Carbon
-     */
-    private function getDateFromTimestamp($timestamp)
-    {
-        $date = new \Carbon\Carbon();
-        $date->setTimestamp($timestamp);
-
-        return $date;
     }
 
     /**
@@ -176,8 +167,8 @@ class Datetime extends Data implements ResourcePersistenceAwareInterface, QueryR
      */
     public function getDataFromEditmode($data, $object = null, $params = [])
     {
-        if (is_numeric($data)) {
-            return $this->getDateFromTimestamp($data / 1000);
+        if (!empty($data)) {
+            return $this->getEditDateFormatter()->parseString($data);
         }
 
         return null;
@@ -192,10 +183,6 @@ class Datetime extends Data implements ResourcePersistenceAwareInterface, QueryR
      */
     public function getDataFromGridEditor($data, $object = null, $params = [])
     {
-        if ($data) {
-            $data = $data * 1000;
-        }
-
         return $this->getDataFromEditmode($data, $object, $params);
     }
 
@@ -208,11 +195,7 @@ class Datetime extends Data implements ResourcePersistenceAwareInterface, QueryR
      */
     public function getDataForGrid($data, $object = null, $params = [])
     {
-        if ($data) {
-            return $data->getTimestamp();
-        }
-
-        return null;
+        return $this->getDataForEditmode($data, $object, $params);
     }
 
     /**
@@ -227,7 +210,7 @@ class Datetime extends Data implements ResourcePersistenceAwareInterface, QueryR
     public function getVersionPreview($data, $object = null, $params = [])
     {
         if ($data instanceof \DateTimeInterface) {
-            return $data->format('Y-m-d H:i:s');
+            return $this->getEditDateFormatter()->prettyFormat($data);
         }
 
         return '';
@@ -240,7 +223,7 @@ class Datetime extends Data implements ResourcePersistenceAwareInterface, QueryR
     {
         $data = $this->getDataFromObjectParam($object, $params);
         if ($data instanceof \DateTimeInterface) {
-            return $data->format('Y-m-d H:i');
+            return $this->getEditDateFormatter()->prettyFormat($data);
         }
 
         return '';
@@ -270,11 +253,7 @@ class Datetime extends Data implements ResourcePersistenceAwareInterface, QueryR
     public function setDefaultValue($defaultValue)
     {
         if (strlen((string)$defaultValue) > 0) {
-            if (is_numeric($defaultValue)) {
-                $this->defaultValue = (int)$defaultValue;
-            } else {
-                $this->defaultValue = strtotime($defaultValue);
-            }
+            $this->defaultValue = $this->getResourceDateFormatter()->format($defaultValue);
         }
 
         return $this;
@@ -301,6 +280,22 @@ class Datetime extends Data implements ResourcePersistenceAwareInterface, QueryR
     }
 
     /**
+     * @return string
+     */
+    public function getShowTimezone(): string
+    {
+        return $this->showTimezone;
+    }
+
+    /**
+     * @param string $showTimezone
+     */
+    public function setShowTimezone(string $showTimezone): void
+    {
+        $this->showTimezone = $showTimezone;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function isDiffChangeAllowed($object, $params = [])
@@ -320,7 +315,7 @@ class Datetime extends Data implements ResourcePersistenceAwareInterface, QueryR
     {
         $thedata = $data[0]['data'];
         if ($thedata) {
-            return $this->getDateFromTimestamp($thedata);
+            return $this->getEditDateFormatter()->parseString($thedata);
         }
 
         return null;
@@ -338,8 +333,8 @@ class Datetime extends Data implements ResourcePersistenceAwareInterface, QueryR
         $result = [];
 
         $thedata = null;
-        if ($data) {
-            $thedata = $data->getTimestamp();
+        if ($data instanceof \DatetimeInterface) {
+            $thedata = $this->getEditDateFormatter()->prettyFormat($data);
         }
         $diffdata = [];
         $diffdata['field'] = $this->getName();
@@ -369,7 +364,7 @@ class Datetime extends Data implements ResourcePersistenceAwareInterface, QueryR
         $timestamp = $value;
 
         if ($this->getColumnType() == 'datetime') {
-            $value = date('Y-m-d', $value);
+            $value = (new DateTimeFormat\DateOnly())->format($value);
         }
 
         if ($operator == '=') {
@@ -406,10 +401,7 @@ class Datetime extends Data implements ResourcePersistenceAwareInterface, QueryR
     protected function doGetDefaultValue($object, $context = [])
     {
         if ($this->getDefaultValue()) {
-            $date = new \Carbon\Carbon();
-            $date->setTimestamp($this->getDefaultValue());
-
-            return $date;
+            return $this->getResourceDateFormatter()->parseString($this->getDefaultValue());
         } elseif ($this->isUseCurrentDate()) {
             return new \Carbon\Carbon();
         }
@@ -481,7 +473,7 @@ class Datetime extends Data implements ResourcePersistenceAwareInterface, QueryR
     public function denormalize($value, $params = [])
     {
         if ($value !== null) {
-            return $this->getDateFromTimestamp($value);
+            return $this->getResourceDateFormatter()->parseTimestamp($value);
         }
 
         return null;
@@ -499,5 +491,15 @@ class Datetime extends Data implements ResourcePersistenceAwareInterface, QueryR
         ];
 
         return array_merge($defaultBlockedVars, $this->getBlockedVarsForExport());
+    }
+
+    protected function getResourceDateFormatter(): DateTimeFormat\AbstractDateTimeFormat
+    {
+        return new DateTimeFormat\DatabaseDateTime();
+    }
+
+    protected function getEditDateFormatter(): DateTimeFormat\AbstractDateTimeFormat
+    {
+        return new DateTimeFormat\NoTimezone();
     }
 }

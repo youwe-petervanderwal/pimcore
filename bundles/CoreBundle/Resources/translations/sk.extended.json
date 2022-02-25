@@ -350,6 +350,8 @@
     "file_explorer_saved_file_error": "Súbor nemohol byť uložený",
     "reserved_field_names_error": "Nasledujúce názvy sú rezervované systémom: ",
     "use_current_date": "Použiť aktuálny dátum",
+    "show_timezone": "Zobraziť časové pásmo",
+    "when_differs": "Kedy sa líši",
     "restrict_selection_to": "Obmedziť výber na",
     "maximum_tabs": "Maximálny počet záložiek",
     "algorithm": "Algoritmus",

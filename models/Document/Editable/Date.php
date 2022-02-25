@@ -16,6 +16,7 @@
 namespace Pimcore\Model\Document\Editable;
 
 use Pimcore\Model;
+use Pimcore\Tool\DateTimeFormat;
 
 /**
  * @method \Pimcore\Model\Document\Editable\Dao getDao()
@@ -61,7 +62,7 @@ class Date extends Model\Document\Editable implements EditmodeDataInterface
     public function getDataEditmode() /** : mixed */
     {
         if ($this->date) {
-            return $this->date->getTimestamp();
+            return $this->getDateFormatter()->format($this->date);
         }
 
         return null;
@@ -72,19 +73,19 @@ class Date extends Model\Document\Editable implements EditmodeDataInterface
      */
     public function frontend()
     {
-        $format = null;
+        if (!$this->date instanceof \DateTimeInterface) {
+            return '';
+        }
 
         if (isset($this->config['outputFormat']) && $this->config['outputFormat']) {
             $format = $this->config['outputFormat'];
         } elseif (isset($this->config['format']) && $this->config['format']) {
             $format = $this->config['format'];
         } else {
-            $format = 'Y-m-d\TH:i:sO'; // ISO8601
+            $format = \DateTime::ATOM;
         }
 
-        if ($this->date instanceof \DateTimeInterface) {
-            return $this->date->formatLocalized($format);
-        }
+        return $this->date->formatLocalized($format);
     }
 
     /**
@@ -105,7 +106,7 @@ class Date extends Model\Document\Editable implements EditmodeDataInterface
     public function setDataFromResource($data)
     {
         if ($data) {
-            $this->setDateFromTimestamp($data);
+            $this->date = $this->getDateFormatter()->parseTimestamp($data);
         }
 
         return $this;
@@ -117,8 +118,7 @@ class Date extends Model\Document\Editable implements EditmodeDataInterface
     public function setDataFromEditmode($data)
     {
         if (strlen($data) > 5) {
-            $timestamp = strtotime($data);
-            $this->setDateFromTimestamp($timestamp);
+            $this->date = $this->getDateFormatter()->parseString($data);
         }
 
         return $this;
@@ -136,12 +136,8 @@ class Date extends Model\Document\Editable implements EditmodeDataInterface
         return true;
     }
 
-    /**
-     * @param int $timestamp
-     */
-    private function setDateFromTimestamp($timestamp)
+    protected function getDateFormatter(): DateTimeFormat\AbstractDateTimeFormat
     {
-        $this->date = new \Carbon\Carbon();
-        $this->date->setTimestamp($timestamp);
+        return new DateTimeFormat\DateOnly();
     }
 }

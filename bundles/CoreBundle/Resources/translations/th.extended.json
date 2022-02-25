@@ -350,6 +350,8 @@
     "file_explorer_saved_file_error": "ไม่สามารถบันทึกไฟล์",
     "reserved_field_names_error": "โปรดอย่าใช้ชื่อฟิลด์ที่สงวนไว้ดังต่อไปนี้:",
     "use_current_date": "ใช้วันที่ปัจจุบัน",
+    "show_timezone": "แสดงเขตเวลา",
+    "when_differs": "เมื่อแตกต่าง",
     "restrict_selection_to": "จำกัด การเลือกเป็น",
     "maximum_tabs": "จำนวนแท็บสูงสุด",
     "algorithm": "ขั้นตอนวิธี",

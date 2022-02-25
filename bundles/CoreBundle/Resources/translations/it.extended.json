@@ -350,6 +350,8 @@
     "file_explorer_saved_file_error": "Non posso salvare il file",
     "reserved_field_names_error": "Non usare le seguenti parole chiave nei campi:",
     "use_current_date": "Usa la data corrente",
+    "show_timezone": "Mostra fuso orario",
+    "when_differs": "Quando è diverso",
     "restrict_selection_to": "Limita selezione a",
     "maximum_tabs": "Numero massimo di tab",
     "algorithm": "Algoritmo",

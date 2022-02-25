@@ -350,6 +350,8 @@
     "file_explorer_saved_file_error": "File mentése sikertelen",
     "reserved_field_names_error": "Kérjük ne használd az alabbi foglalt mezőneveket: ",
     "use_current_date": "Aktuális dátum",
+    "show_timezone": "Időzóna megjelenítése",
+    "when_differs": "Mikor különbözik",
     "restrict_selection_to": "Kiválasztás korlátozása:",
     "maximum_tabs": "Tabok maximális száma",
     "algorithm": "Algoritmus",

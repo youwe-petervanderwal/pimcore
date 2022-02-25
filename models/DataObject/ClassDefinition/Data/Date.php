@@ -21,6 +21,7 @@ use Pimcore\Model;
 use Pimcore\Model\DataObject;
 use Pimcore\Model\DataObject\ClassDefinition\Data;
 use Pimcore\Normalizer\NormalizerInterface;
+use Pimcore\Tool\DateTimeFormat;
 
 class Date extends Data implements ResourcePersistenceAwareInterface, QueryResourcePersistenceAwareInterface, TypeDeclarationSupportInterface, EqualComparisonInterface, VarExporterInterface, NormalizerInterface
 {
@@ -82,13 +83,12 @@ class Date extends Data implements ResourcePersistenceAwareInterface, QueryResou
     {
         $data = $this->handleDefaultValue($data, $object, $params);
 
-        if ($data) {
-            $result = $data->getTimestamp();
+        if ($data instanceof \DateTimeInterface) {
             if ($this->getColumnType() == 'date') {
-                $result = date('Y-m-d', $result);
+                return $this->getDateFormatter()->format($data);
             }
 
-            return $result;
+            return $data->getTimestamp();
         }
 
         return null;
@@ -107,15 +107,10 @@ class Date extends Data implements ResourcePersistenceAwareInterface, QueryResou
     {
         if ($data) {
             if ($this->getColumnType() == 'date') {
-                $data = strtotime($data);
-                if ($data === false) {
-                    return null;
-                }
+                return $this->getDateFormatter()->parseString($data);
             }
 
-            $result = $this->getDateFromTimestamp($data);
-
-            return $result;
+            return $this->getDateFormatter()->parseTimestamp($data);
         }
 
         return null;
@@ -147,23 +142,10 @@ class Date extends Data implements ResourcePersistenceAwareInterface, QueryResou
     public function getDataForEditmode($data, $object = null, $params = [])
     {
         if ($data) {
-            return $data->getTimestamp();
+            return $this->getDateFormatter()->format($data);
         }
 
         return null;
-    }
-
-    /**
-     * @param int $timestamp
-     *
-     * @return \Carbon\Carbon
-     */
-    private function getDateFromTimestamp($timestamp)
-    {
-        $date = new \Carbon\Carbon();
-        $date->setTimestamp($timestamp);
-
-        return $date;
     }
 
     /**
@@ -177,8 +159,8 @@ class Date extends Data implements ResourcePersistenceAwareInterface, QueryResou
      */
     public function getDataFromEditmode($data, $object = null, $params = [])
     {
-        if (is_numeric($data)) {
-            return $this->getDateFromTimestamp($data / 1000);
+        if (!empty($data)) {
+            return $this->getDateFormatter()->parseString($data);
         }
 
         return null;
@@ -193,10 +175,6 @@ class Date extends Data implements ResourcePersistenceAwareInterface, QueryResou
      */
     public function getDataFromGridEditor($data, $object = null, $params = [])
     {
-        if ($data) {
-            $data = $data * 1000;
-        }
-
         return $this->getDataFromEditmode($data, $object, $params);
     }
 
@@ -209,11 +187,7 @@ class Date extends Data implements ResourcePersistenceAwareInterface, QueryResou
      */
     public function getDataForGrid($data, $object = null, $params = [])
     {
-        if ($data) {
-            return $data->getTimestamp();
-        }
-
-        return null;
+        return $this->getDataForEditmode($data, $object, $params);
     }
 
     /**
@@ -228,22 +202,18 @@ class Date extends Data implements ResourcePersistenceAwareInterface, QueryResou
     public function getVersionPreview($data, $object = null, $params = [])
     {
         if ($data instanceof \DateTimeInterface) {
-            return $data->format('Y-m-d');
+            return $this->getDateFormatter()->format($data);
         }
 
         return '';
     }
 
     /**
-     * @return int
+     * @return string|null
      */
     public function getDefaultValue()
     {
-        if ($this->defaultValue !== null) {
-            return $this->defaultValue;
-        }
-
-        return 0;
+        return $this->defaultValue;
     }
 
     /**
@@ -254,11 +224,7 @@ class Date extends Data implements ResourcePersistenceAwareInterface, QueryResou
     public function setDefaultValue($defaultValue)
     {
         if (strlen((string)$defaultValue) > 0) {
-            if (is_numeric($defaultValue)) {
-                $this->defaultValue = (int)$defaultValue;
-            } else {
-                $this->defaultValue = strtotime($defaultValue);
-            }
+            $this->defaultValue = $this->getDateFormatter()->format($defaultValue);
         }
 
         return $this;
@@ -271,7 +237,7 @@ class Date extends Data implements ResourcePersistenceAwareInterface, QueryResou
     {
         $data = $this->getDataFromObjectParam($object, $params);
         if ($data instanceof \DateTimeInterface) {
-            return $data->format('Y-m-d');
+            return $this->getDateFormatter()->format($data);
         }
 
         return '';
@@ -324,7 +290,7 @@ class Date extends Data implements ResourcePersistenceAwareInterface, QueryResou
     {
         $thedata = $data[0]['data'];
         if ($thedata) {
-            return $this->getDateFromTimestamp($thedata);
+            return $this->getDateFormatter()->parseString($thedata);
         }
 
         return null;
@@ -342,8 +308,8 @@ class Date extends Data implements ResourcePersistenceAwareInterface, QueryResou
         $result = [];
 
         $thedata = null;
-        if ($data) {
-            $thedata = $data->getTimestamp();
+        if ($data instanceof \DatetimeInterface) {
+            $thedata = $this->getDateFormatter()->format($data);
         }
         $diffdata = [];
         $diffdata['field'] = $this->getName();
@@ -373,7 +339,7 @@ class Date extends Data implements ResourcePersistenceAwareInterface, QueryResou
         $timestamp = $value;
 
         if ($this->getColumnType() == 'date') {
-            $value = date('Y-m-d', $value);
+            $value = $this->getDateFormatter()->format($value);
         }
 
         if ($operator == '=') {
@@ -409,10 +375,7 @@ class Date extends Data implements ResourcePersistenceAwareInterface, QueryResou
     protected function doGetDefaultValue($object, $context = [])
     {
         if ($this->getDefaultValue()) {
-            $date = new \Carbon\Carbon();
-            $date->setTimestamp($this->getDefaultValue());
-
-            return $date;
+            return $this->getDateFormatter()->parseString($this->getDefaultValue());
         } elseif ($this->isUseCurrentDate()) {
             return new \Carbon\Carbon();
         }
@@ -484,7 +447,7 @@ class Date extends Data implements ResourcePersistenceAwareInterface, QueryResou
     public function denormalize($value, $params = [])
     {
         if ($value !== null) {
-            return $this->getDateFromTimestamp($value);
+            return $this->getDateFormatter()->parseTimestamp($value);
         }
 
         return null;
@@ -502,5 +465,10 @@ class Date extends Data implements ResourcePersistenceAwareInterface, QueryResou
         ];
 
         return array_merge($defaultBlockedVars, $this->getBlockedVarsForExport());
+    }
+
+    protected function getDateFormatter(): DateTimeFormat\AbstractDateTimeFormat
+    {
+        return new DateTimeFormat\DateOnly();
     }
 }

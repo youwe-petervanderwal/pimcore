@@ -350,6 +350,8 @@
     "file_explorer_saved_file_error": "No se pudo guardar el archivo",
     "reserved_field_names_error": "Por favor, no use los siguientes nombres de campo reservados:",
     "use_current_date": "Usar fecha actual",
+    "show_timezone": "Mostrar zona horaria",
+    "when_differs": "Cuando difiere",
     "restrict_selection_to": "restrict_selection_to",
     "maximum_tabs": "maximum_tabs",
     "algorithm": "algoritmo",

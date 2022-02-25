@@ -356,6 +356,8 @@
   "file_explorer_saved_file_error": "Cannot save file",
   "reserved_field_names_error": "Please do not use the following reserved field names: ",
   "use_current_date": "Use current date",
+  "show_timezone": "Show timezone",
+  "when_differs": "When differs",
   "inherited_default_value_warning": "The default value is used if either inheritance is deactivated or if the parent value is empty",
   "restrict_selection_to": "Restrict Selection To",
   "maximum_tabs": "Maximum number of tabs",

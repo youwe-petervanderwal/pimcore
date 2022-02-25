@@ -65,18 +65,12 @@ pimcore.object.classes.data.date = Class.create(pimcore.object.classes.data.data
             name: "defaultValue",
             cls: "object_field",
             width: 300,
-            disabled: datax.useCurrentDate
+            disabled: datax.useCurrentDate,
+            format: "Y-m-d"
         };
 
         if (datax.defaultValue) {
-            var tmpDate;
-            if (typeof datax.defaultValue === 'object') {
-                tmpDate = datax.defaultValue;
-            } else {
-                tmpDate = new Date(datax.defaultValue * 1000);
-            }
-
-            defaultDateConfig.value = tmpDate;
+            defaultDateConfig.value = pimcore.helpers.date.parse(datax.defaultValue);
         }
 
         var defaultDateField = new Ext.form.DateField(defaultDateConfig);
@@ -151,6 +145,9 @@ pimcore.object.classes.data.date = Class.create(pimcore.object.classes.data.data
     applyData: function ($super) {
         $super();
         this.datax.queryColumnType = this.datax.columnType;
+        if (this.datax.defaultValue) {
+            this.datax.defaultValue = pimcore.helpers.date.format.dateOnly(this.datax.defaultValue);
+        }
     },
 
     applySpecialData: function (source) {

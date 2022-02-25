@@ -350,6 +350,8 @@
     "file_explorer_saved_file_error": "Kan het bestand niet opslaan",
     "reserved_field_names_error": "De volgende gereserveerde veldnamen kunnen niet worden gebruikt:",
     "use_current_date": "Gebruik huidige datum",
+    "show_timezone": "Toon tijdszone",
+    "when_differs": "Wanneer anders",
     "restrict_selection_to": "Beperk selectie tot",
     "maximum_tabs": "Maximaal aantal tabs",
     "algorithm": "Algoritme",

@@ -23,9 +23,9 @@ pimcore.object.tags.datetime = Class.create(pimcore.object.tags.abstract, {
 
     applyDefaultValue: function() {
         if ((typeof this.data === "undefined" || this.data === null) && this.fieldConfig.defaultValue) {
-            this.defaultValue = this.fieldConfig.defaultValue;
+            this.defaultValue = pimcore.helpers.date.format.noTimezone(this.fieldConfig.defaultValue);
         } else if ((typeof this.data === "undefined" || this.data === null) && this.fieldConfig.useCurrentDate) {
-            this.defaultValue = (new Date().getTime()) / 1000;
+            this.defaultValue = pimcore.helpers.date.format.noTimezone(new Date());
         }
 
         if (this.defaultValue) {
@@ -48,9 +48,7 @@ pimcore.object.tags.datetime = Class.create(pimcore.object.tags.abstract, {
                         }
 
                         if (value) {
-                            var timestamp = intval(value) * 1000;
-                            var date = new Date(timestamp);
-                            return Ext.Date.format(date, "Y-m-d H:i");
+                            return pimcore.helpers.date.format.noTimezone(value, true);
                         }
                         return "";
                     }.bind(this, field.key)};
@@ -74,19 +72,26 @@ pimcore.object.tags.datetime = Class.create(pimcore.object.tags.abstract, {
         };
 
         if (this.data) {
-            var tmpDate = new Date(intval(this.data) * 1000);
-            date.value = tmpDate;
-            time.value = tmpDate;
+            date.value = time.value = pimcore.helpers.date.parse(this.data);
         }
 
         this.datefield = Ext.create('Ext.form.field.Date', date);
         this.timefield = Ext.create('Ext.form.field.Time', time);
 
+        var componentItems = [this.datefield, this.timefield];
+        if (this.shouldDisplayTimezone()) {
+            componentItems.push({
+                xtype: 'panel',
+                style: 'margin-top: 10px; margin-left: 10px;',
+                html: Ext.util.Format.htmlEncode(t(pimcore.settings.timezone_info.name))
+            });
+        }
+
         var componentCfg = {
             layout: 'hbox',
             fieldLabel:this.fieldConfig.title,
             combineErrors:false,
-            items:[this.datefield, this.timefield],
+            items:componentItems,
             componentCls: this.getWrapperClassNames(),
             isDirty: function() {
                 return this.datefield.isDirty() || this.timefield.isDirty()
@@ -104,6 +109,16 @@ pimcore.object.tags.datetime = Class.create(pimcore.object.tags.abstract, {
         this.component = Ext.create('Ext.form.FieldContainer', componentCfg);
 
         return this.component;
+    },
+
+    shouldDisplayTimezone: function() {
+        if (this.fieldConfig.showTimezone === 'always') {
+            return true;
+        }
+        if (this.fieldConfig.showTimezone === 'when_differs') {
+            return !pimcore.helpers.date.isBrowserInSameTimezoneAsServer();
+        }
+        return false;
     },
 
     getLayoutShow:function () {
@@ -134,7 +149,7 @@ pimcore.object.tags.datetime = Class.create(pimcore.object.tags.abstract, {
 
             value = Ext.Date.parseDate(dateString, "Y-m-d H:i");
             if (value && typeof value.getTime == "function") {
-                return value.getTime();
+                return pimcore.helpers.date.format.noTimezone(value);
             }
 
             return value;
@@ -173,7 +188,7 @@ pimcore.object.tags.datetime = Class.create(pimcore.object.tags.abstract, {
     },
 
     getCellEditValue: function () {
-        return this.getValue() / 1000;
+        return this.getValue();
     }
 
 });

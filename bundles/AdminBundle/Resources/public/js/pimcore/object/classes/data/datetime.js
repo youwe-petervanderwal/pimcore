@@ -72,7 +72,8 @@ pimcore.object.classes.data.datetime = Class.create(pimcore.object.classes.data.
 
         var date = {
             cls:"object_field",
-            width:300
+            width:300,
+            format:"Y-m-d"
         };
 
         var time = {
@@ -83,15 +84,8 @@ pimcore.object.classes.data.datetime = Class.create(pimcore.object.classes.data.
 
 
         if (datax.defaultValue) {
-            var tmpDate;
-            if(typeof datax.defaultValue === 'object'){
-                tmpDate = datax.defaultValue;
-            } else {
-                tmpDate = new Date(datax.defaultValue * 1000);
-            }
-
-            date.value = tmpDate;
-            time.value = Ext.Date.format(tmpDate, "H:i");
+            date.value = pimcore.helpers.date.parse(datax.defaultValue);
+            time.value = Ext.Date.format(date.value, "H:i");
         }
 
         var datefield = new Ext.form.DateField(date);
@@ -136,6 +130,29 @@ pimcore.object.classes.data.datetime = Class.create(pimcore.object.classes.data.
             displayField: 'label'
         });
 
+        var showTimezoneField = new Ext.form.ComboBox({
+            name: "showTimezone",
+            mode: "local",
+            autoSelect: true,
+            forceSelection: true,
+            editable: false,
+            fieldLabel: t("show_timezone"),
+            value: datax.showTimezone,
+            store: new Ext.data.ArrayStore({
+                fields: [
+                    'id',
+                    'label'
+                ],
+                data: [
+                    ['never', t('never')],
+                    ['when_differs', t('when_differs')],
+                    ['always', t('always')]
+                ]
+            }),
+            triggerAction: 'all',
+            valueField: 'id',
+            displayField: 'label'
+        });
 
         specificItems = specificItems.concat(
             [
@@ -163,7 +180,8 @@ pimcore.object.classes.data.datetime = Class.create(pimcore.object.classes.data.
                 hideLabel:true,
                 html:'<span class="object_field_setting_warning">' +t('inherited_default_value_warning')+'</span>'
             },
-                columnTypeField
+                columnTypeField,
+                showTimezoneField
             ]);
 
 
@@ -177,13 +195,13 @@ pimcore.object.classes.data.datetime = Class.create(pimcore.object.classes.data.
             var dateString = Ext.Date.format(datefield.getValue(), "Y-m-d");
 
             if (timefield.getValue()) {
-                dateString += " " + Ext.Date.format(timefield.getValue(), "H:i");
+                dateString += " " + Ext.Date.format(timefield.getValue(), "H:i:00");
             }
             else {
-                dateString += " 00:00";
+                dateString += " 00:00:00";
             }
 
-            defaultValue.setValue((Ext.Date.parseDate(dateString, "Y-m-d H:i").getTime())/1000);
+            defaultValue.setValue(pimcore.helpers.date.format.database(dateString));
 
         } else {
             defaultValue.setValue(null);
@@ -208,6 +226,9 @@ pimcore.object.classes.data.datetime = Class.create(pimcore.object.classes.data.
     applyData: function ($super) {
         $super();
         this.datax.queryColumnType = this.datax.columnType;
+        if (this.datax.defaultValue) {
+            this.datax.defaultValue = pimcore.helpers.date.format.database(this.datax.defaultValue);
+        }
     },
 
     applySpecialData: function(source) {
@@ -220,7 +241,8 @@ pimcore.object.classes.data.datetime = Class.create(pimcore.object.classes.data.
                     defaultValue: source.datax.defaultValue,
                     useCurrentDate: source.datax.useCurrentDate,
                     defaultValueGenerator: source.datax.defaultValueGenerator,
-                    columnType: source.datax.columnType
+                    columnType: source.datax.columnType,
+                    showTimezone: source.datax.showTimezone
                 });
         }
     }

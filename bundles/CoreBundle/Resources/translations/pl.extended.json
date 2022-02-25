@@ -350,6 +350,8 @@
     "file_explorer_saved_file_error": "Nie można zapisać pliku",
     "reserved_field_names_error": "Proszę nie używać następujących zarezerwowanych nazw pól:",
     "use_current_date": "Użyj aktualnej daty",
+    "show_timezone": "Pokaż strefę czasową",
+    "when_differs": "Kiedy różni się",
     "restrict_selection_to": "Ogranicz wybór do",
     "maximum_tabs": "Maksymalna liczba tabów",
     "algorithm": "Algorytm",
