@@ -993,10 +993,11 @@ class Imagick extends Adapter
             $image = new \Imagick();
             $image->newImage(1, 1, new \ImagickPixel('red'));
             $image->writeImage($format . ':' . $tmpFile);
+            $fileSize = filesize($tmpFile); // Avoid false positive, for AVIF Imagick seems to continue on some servers without throwing an error
             unlink($tmpFile);
 
-            return true;
-        } catch (\Exception $e) {
+            return $fileSize > 0;
+        } catch (\Exception) {
             return false;
         }
     }
